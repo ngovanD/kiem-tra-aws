@@ -21,7 +21,7 @@ resource "aws_launch_template" "web" {
 
   vpc_security_group_ids = [var.sg.web]
 
-  user_data = filebase64("${path.module}/run.sh")
+  user_data = filebase64("${path.module}/script.sh")
 
   iam_instance_profile {
     name = module.iam_instance_profile.name
