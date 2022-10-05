@@ -1,3 +1,5 @@
+data "aws_availability_zones" "available" {}
+
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "3.12.0"
@@ -14,7 +16,7 @@ module "vpc" {
   single_nat_gateway           = true
 }
 
-module "alb_sg" {
+module "lb_sg" {
   source = "terraform-in-action/sg/aws"
   vpc_id = module.vpc.vpc_id
   ingress_rules = [
@@ -36,3 +38,13 @@ module "web_sg" {
   ]
 }
 
+module "db_sg" {
+  source = "terraform-in-action/sg/aws"
+  vpc_id = module.vpc.vpc_id
+  ingress_rules = [
+    {
+      port            = 5432
+      security_groups = [module.web_sg.security_group.id]
+    }
+  ]
+}

@@ -9,6 +9,11 @@ data "aws_ami" "ami" {
   owners = ["amazon"]
 }
 
+module "iam_instance_profile" {
+  source  = "terraform-in-action/iip/aws"
+  actions = ["logs:*", "rds:*"]
+}
+
 resource "aws_launch_template" "web" {
   name_prefix   = "web-"
   image_id      = data.aws_ami.ami.id
@@ -16,18 +21,10 @@ resource "aws_launch_template" "web" {
 
   vpc_security_group_ids = [var.sg.web]
 
-  user_data = filebase64("${path.module}/script.sh")
-}
+  user_data = filebase64("${path.module}/run.sh")
 
-resource "aws_autoscaling_group" "web" {
-  name                = "${var.project}-asg"
-  min_size            = 2
-  max_size            = 4
-  vpc_zone_identifier = var.vpc.private_subnets
-
-  launch_template {
-    id      = aws_launch_template.web.id
-    version = aws_launch_template.web.latest_version
+  iam_instance_profile {
+    name = module.iam_instance_profile.name
   }
 }
 
@@ -58,8 +55,8 @@ module "alb" {
 
 resource "aws_autoscaling_group" "web" {
   name                = "${var.project}-asg"
-  min_size            = 1
-  max_size            = 3
+  min_size            = 2
+  max_size            = 4
   vpc_zone_identifier = var.vpc.private_subnets
   target_group_arns   = module.alb.target_group_arns
 
@@ -68,5 +65,3 @@ resource "aws_autoscaling_group" "web" {
     version = aws_launch_template.web.latest_version
   }
 }
-
-
